@@ -1,0 +1,150 @@
+{
+  "framework_version": "1.0.0",
+  "dataset_version": "1.0",
+  "run_id": "202610d133139-dcc312",
+  "timestamp": "2026-10-10T13:31:39.469001+00:00",
+  "execution_mode": "offline",
+  "dataset_path": "benchmark\\datasets\\synthetic_dataset.json",
+  "selected_case_ids": [
+    "test_case_1",
+    "test_case_2",
+    "test_case_3"
+  ],
+  "total_cases": 3,
+  "passed_cases": 3,
+  "failed_cases": 0,
+  "skipped_cases": 1,
+  "errored_cases": 0,
+  "results": [
+    {
+      "case_id": "test_case_1",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 8.39999847812578e-06,
+      "expected_claims": [
+        "The capital of France is Paris."
+      ],
+      "actual_claims": [
+        "The capital of France is Paris."
+      ],
+      "expected_verdict": "true",
+      "actual_verdict": "true"
+    },
+    {
+      "case_id": "test_case_2",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 4.399997123982757e-06,
+      "expected_claims": [
+        "The sun orbits the earth."
+      ],
+      "actual_claims": [
+        "The sun orbits the earth."
+      ],
+      "expected_verdict": "false",
+      "actual_verdict": "false"
+    },
+    {
+      "case_id": "test_case_3",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 2.3000029614195228e-06,
+      "expected_claims": [
+        "Water boils at 100 degrees Celsius.",
+        "Water freezes at 0 degrees Celsius."
+      ],
+      "actual_claims": [
+        "Water boils at 100 degrees Celsius.",
+        "Water freezes at 0 degrees Celsius."
+      ],
+      "expected_verdict": "true",
+      "actual_verdict": "true"
+    }
+  ],
+  "claim_metrics": {
+    "true_positives": 4,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "verdict_metrics": {
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "accuracy": 1.0,
+    "precision_per_class": {
+      "true": 1.0,
+      "false": 1.0,
+      "misleading": 0.0,
+      "partially true": 0.0,
+      "unverifiable": 0.0
+    },
+    "recall_per_class": {
+      "true": 1.0,
+      "false": 1.0,
+      "misleading": 0.0,
+      "partially true": 0.0,
+      "unverifiable": 0.0
+    },
+    "f1_per_class": {
+      "true": 1.0,
+      "false": 1.0,
+      "misleading": 0.0,
+      "partially true": 0.0,
+      "unverifiable": 0.0
+    },
+    "confusion_matrix": {
+      "true": {
+        "true": 2,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "false": {
+        "true": 0,
+        "false": 1,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "misleading": {
+        "true": 0,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "partially true": {
+        "true": 0,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "unverifiable": {
+        "true": 0,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      }
+    },
+    "excluded_count": 0
+  },
+  "total_elapsed_time": 3.479999577393755e-05,
+  "mean_latency": 5.033332854509354e-06,
+  "median_latency": 4.399997123982757e-06
+}

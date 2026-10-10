@@ -1,0 +1,51 @@
+{
+  "dataset_version": "1.0",
+  "cases": [
+    {
+      "case_id": "test_case_1",
+      "description": "Synthetic case 1 - True statement",
+      "input_manuscript": "The capital of France is Paris.",
+      "expected_claims": [
+        {
+          "claim": "The capital of France is Paris."
+        }
+      ],
+      "expected_verdict": "true",
+      "enabled": true
+    },
+    {
+      "case_id": "test_case_2",
+      "description": "Synthetic case 2 - False statement",
+      "input_manuscript": "The sun orbits the earth.",
+      "expected_claims": [
+        {
+          "claim": "The sun orbits the earth."
+        }
+      ],
+      "expected_verdict": "false",
+      "enabled": true
+    },
+    {
+      "case_id": "test_case_3",
+      "description": "Synthetic case 3 - Multiple claims",
+      "input_manuscript": "Water boils at 100 degrees Celsius and freezes at 0 degrees Celsius.",
+      "expected_claims": [
+        {
+          "claim": "Water boils at 100 degrees Celsius."
+        },
+        {
+          "claim": "Water freezes at 0 degrees Celsius."
+        }
+      ],
+      "expected_verdict": "true",
+      "enabled": true
+    },
+    {
+      "case_id": "test_case_4",
+      "description": "Synthetic case 4 - Disabled case",
+      "input_manuscript": "This should not run.",
+      "expected_verdict": "unverifiable",
+      "enabled": false
+    }
+  ]
+}
