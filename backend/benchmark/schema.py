@@ -27,3 +27,19 @@ class BenchmarkCase(BaseModel):
 class BenchmarkDataset(BaseModel):
     dataset_version: str = "1.0"
     cases: list[BenchmarkCase]
+
+    @classmethod
+    def validate_unique_case_ids(cls, v: list[BenchmarkCase]) -> list[BenchmarkCase]:
+        case_ids = set()
+        for case in v:
+            if case.case_id in case_ids:
+                raise ValueError(f"Duplicate case_id found: {case.case_id}")
+            case_ids.add(case.case_id)
+        return v
+        
+    # for pydantic v2
+    from pydantic import field_validator
+    @field_validator('cases', mode='after')
+    @classmethod
+    def check_unique(cls, v):
+        return cls.validate_unique_case_ids(v)

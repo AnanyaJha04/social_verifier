@@ -30,6 +30,15 @@ def test_dataset_validation():
         BenchmarkDataset(**{
             "cases": [{"case_id": "2", "description": "test", "expected_verdict": "fake_verdict"}]
         })
+        
+    # Duplicate case_ids
+    with pytest.raises(ValidationError):
+        BenchmarkDataset(**{
+            "cases": [
+                {"case_id": "duplicate", "description": "1"},
+                {"case_id": "duplicate", "description": "2"}
+            ]
+        })
 
 def test_metrics_claim():
     expected = ["Water boils at 100 degrees Celsius", "Sky is blue"]
