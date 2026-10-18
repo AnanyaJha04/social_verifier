@@ -1,16 +1,13 @@
 from pydantic import BaseModel, field_validator
+from app.core.url_security import validate_url_security, URLValidationError
 
 
 def _validate_url(value: str) -> str:
-    value = value.strip()
-    # Cheap sanity check, not a full URL parser -- just enough to reject
-    # obviously-wrong input (e.g. someone accidentally pasting a whole file's
-    # contents instead of a link) with a clear 400 instead of it silently
-    # becoming a reel_checks row that fails later with that pasted content
-    # leaking into a yt-dlp error message.
-    if len(value) > 2000 or not value.startswith(("http://", "https://")):
-        raise ValueError("must be a valid http(s) URL")
-    return value
+    try:
+        return validate_url_security(value, resolve_dns=False)
+    except URLValidationError as e:
+        raise ValueError(str(e)) from e
+
 
 
 class CreateSessionRequest(BaseModel):

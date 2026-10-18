@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api import auth, clips, editor, sessions, verify, ws
+from app.api import auth, clips, editor, observability, sessions, verify, ws
 from app.core import db
 from app.core.auth import SESSION_TOKEN
 from app.core.config import settings
@@ -50,6 +50,7 @@ app.include_router(clips.router)
 app.include_router(verify.router)
 app.include_router(editor.router)
 app.include_router(ws.router)
+app.include_router(observability.router)
 
 
 @app.on_event("startup")

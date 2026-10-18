@@ -3,6 +3,7 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.core.proc import run_checked
+from app.core.url_security import validate_url_security, URLValidationError
 from app.core.ytdlp_cookies import cookies_args
 
 
@@ -18,7 +19,13 @@ def download_clip(url: str, dest_dir: Path) -> Path:
     Facebook) out of the box; Instagram in particular sometimes serves a
     restricted format list (occasionally video with no audio track at all)
     to requests that look unauthenticated -- see ytdlp_cookies_file."""
+    try:
+        url = validate_url_security(url, resolve_dns=True)
+    except URLValidationError as e:
+        raise DownloadError(f"Rejected unsafe or invalid download URL: {e}") from e
+
     dest_dir.mkdir(parents=True, exist_ok=True)
+
     output_template = str(dest_dir / "source.%(ext)s")
     cmd = [
         settings.ytdlp_bin,

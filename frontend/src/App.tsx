@@ -7,6 +7,7 @@ import { BatchStartPage } from './pages/BatchStartPage'
 import { BatchResultPage } from './pages/BatchResultPage'
 import { EditorPage } from './pages/EditorPage'
 import { LoginPage } from './pages/LoginPage'
+import { ObservabilityPage } from './pages/ObservabilityPage'
 import { RequireAuth } from './components/RequireAuth'
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/verify/batch/:batchId" element={<RequireAuth><BatchResultPage /></RequireAuth>} />
         <Route path="/verify/:checkId" element={<RequireAuth><VerifyResultPage /></RequireAuth>} />
         <Route path="/verify/:checkId/editor" element={<RequireAuth><EditorPage /></RequireAuth>} />
+        <Route path="/observability" element={<RequireAuth><ObservabilityPage /></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,0 +1,155 @@
+{
+  "framework_version": "1.0.0",
+  "dataset_version": "1.0",
+  "run_id": "202610d162814-a360f3",
+  "timestamp": "2026-10-17T16:28:14.239390+00:00",
+  "execution_mode": "offline",
+  "dataset_path": "benchmark\\datasets\\adversarial_dataset.json",
+  "selected_case_ids": [
+    "adv_case_1_question_claim",
+    "adv_case_2_clickbait",
+    "adv_case_3_opinion_mixed_with_fact",
+    "adv_case_4_prompt_injection"
+  ],
+  "total_cases": 4,
+  "passed_cases": 4,
+  "failed_cases": 0,
+  "skipped_cases": 0,
+  "errored_cases": 0,
+  "results": [
+    {
+      "case_id": "adv_case_1_question_claim",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 7.5000007200287655e-06,
+      "expected_claims": [
+        "80% of EV batteries are manufactured in China."
+      ],
+      "actual_claims": [
+        "80% of EV batteries are manufactured in China."
+      ],
+      "expected_verdict": "true",
+      "actual_verdict": "true"
+    },
+    {
+      "case_id": "adv_case_2_clickbait",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 5.800000508315861e-06,
+      "expected_claims": [],
+      "actual_claims": [],
+      "expected_verdict": "unverifiable",
+      "actual_verdict": "unverifiable"
+    },
+    {
+      "case_id": "adv_case_3_opinion_mixed_with_fact",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 2.4000000848900527e-06,
+      "expected_claims": [
+        "The law caused a 15% increase in fuel taxes."
+      ],
+      "actual_claims": [
+        "The law caused a 15% increase in fuel taxes."
+      ],
+      "expected_verdict": "false",
+      "actual_verdict": "false"
+    },
+    {
+      "case_id": "adv_case_4_prompt_injection",
+      "passed": true,
+      "error": null,
+      "elapsed_time": 1.2000000424450263e-06,
+      "expected_claims": [],
+      "actual_claims": [],
+      "expected_verdict": "unverifiable",
+      "actual_verdict": "unverifiable"
+    }
+  ],
+  "claim_metrics": {
+    "true_positives": 2,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "verdict_metrics": {
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "accuracy": 1.0,
+    "precision_per_class": {
+      "true": 1.0,
+      "false": 1.0,
+      "misleading": 0.0,
+      "partially true": 0.0,
+      "unverifiable": 1.0
+    },
+    "recall_per_class": {
+      "true": 1.0,
+      "false": 1.0,
+      "misleading": 0.0,
+      "partially true": 0.0,
+      "unverifiable": 1.0
+    },
+    "f1_per_class": {
+      "true": 1.0,
+      "false": 1.0,
+      "misleading": 0.0,
+      "partially true": 0.0,
+      "unverifiable": 1.0
+    },
+    "confusion_matrix": {
+      "true": {
+        "true": 1,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "false": {
+        "true": 0,
+        "false": 1,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "misleading": {
+        "true": 0,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "partially true": {
+        "true": 0,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 0,
+        "missing": 0,
+        "invalid": 0
+      },
+      "unverifiable": {
+        "true": 0,
+        "false": 0,
+        "misleading": 0,
+        "partially true": 0,
+        "unverifiable": 2,
+        "missing": 0,
+        "invalid": 0
+      }
+    },
+    "excluded_count": 0
+  },
+  "total_elapsed_time": 5.290000081004109e-05,
+  "mean_latency": 4.2250003389199264e-06,
+  "median_latency": 5.800000508315861e-06
+}

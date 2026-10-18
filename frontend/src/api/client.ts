@@ -10,6 +10,10 @@ import type {
   FullArticle,
   InstagramKit,
   Newspaper,
+  ObsErrorEvent,
+  ObsExecutions,
+  ObsStageStats,
+  ObsSummary,
   ReelCheck,
   Session,
   Timeline,
@@ -140,4 +144,14 @@ export const api = {
     request<DebunkScript>(`/api/verify/${checkId}/debunk-script`, { method: 'POST' }),
   getDebunkScript: (checkId: string, scriptId: string) =>
     request<DebunkScript>(`/api/verify/${checkId}/debunk-script/${scriptId}`),
+
+  // Observability dashboard (read-only, no sensitive data)
+  getObsSummary: (hours = 24) =>
+    request<ObsSummary>(`/api/observability/summary?hours=${hours}`),
+  getObsStageStats: (hours = 24) =>
+    request<ObsStageStats[]>(`/api/observability/stage-stats?hours=${hours}`),
+  getObsExecutions: (hours = 24, limit = 50, offset = 0) =>
+    request<ObsExecutions>(`/api/observability/executions?hours=${hours}&limit=${limit}&offset=${offset}`),
+  getObsErrors: (hours = 24, limit = 30) =>
+    request<ObsErrorEvent[]>(`/api/observability/errors?hours=${hours}&limit=${limit}`),
 }

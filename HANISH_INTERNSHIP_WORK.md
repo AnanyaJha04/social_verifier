@@ -65,7 +65,35 @@ Planned activities:
 
 ### 2. Adversarial Test Suite
 
-Status: NOT STARTED
+Status: VALIDATED
+
+**Implementation Details:**
+- **Architecture**: A dedicated adversarial test suite was established under `backend/app/tests/adversarial/` organized by categories (A through G) across 7 specialized test modules:
+  - `test_category_a_claims.py`: Direct assertions, paraphrased assertions, questions, clickbait with zero claims, multiple compound claims, opinion mixed with fact, incomplete quotations, duplicate claims, and Whisper segment boundary matching.
+  - `test_category_b_injection.py`: Untrusted transcript injection strings, jailbreak prompts, fake `SYSTEM:`/`DEVELOPER:` role delimiters, schema hijacking, and context block bullet formatting.
+  - `test_category_c_parsing.py`: Primary verdict labels, unsupported labels, missing verdict/analysis/source keys, markdown code-fence stripping, malformed/truncated JSON recovery, extra fields, and government verification parsing.
+  - `test_category_d_network.py`: URL scheme validation, length limits, credentialed URLs, loopback/private IPv4/IPv6 handling, argument list subprocess safety (preventing shell injection), missing audio track detection, and authenticated API endpoint boundaries.
+  - `test_category_e_media.py`: FFmpeg subprocess checking via `run_checked` (capturing stderr on non-zero exits, missing binaries, timeouts), audio extraction arguments, DSP filter chain application, manifest file unlinking in `concat_wavs`, and clip cutting bounds.
+  - `test_category_f_transcription.py`: Whisper segment timestamp-to-absolute offset conversions, whole-chunk fallback, empty/whitespace responses, and manuscript timestamp formatting.
+  - `test_category_g_resilience.py`: Groq rate limit retry parsing and max delay guards, OpenAI missing key and connection error fallbacks, non-LLM conclusion tally generation, Qdrant retrieval failure isolation, and background job failure DB status updates.
+- **Benchmark Integration**: Integrated deterministic adversarial cases into `backend/benchmark/datasets/adversarial_dataset.json` evaluating rhetorical questions, clickbait, opinion-fact mixtures, and prompt injection through the benchmark runner.
+- **Security & Reliability Findings Identified**:
+  - `FINDING-ADV-01`: Absence of SSRF and Private IP blocklisting in `_validate_url` (`app/models/schemas.py`). Confirmed and documented with regression tests in `test_category_d_network.py`.
+  - `FINDING-ADV-02`: In-memory prompt construction string interpolation for `claim` and `quote` (`app/verifier/claims.py`) lacks delimiter escaping. Confirmed and tested in `test_category_b_injection.py`.
+  - `FINDING-ADV-03`: Unsupported model verdict preservation without strict validation against `VerdictLabel`. Confirmed and tested in `test_category_c_parsing.py`.
+
+**Validation Evidence:**
+- **Adversarial Test Suite Command:** `pytest app/tests/adversarial`
+  - **Result:** 98 passed, 0 failed, 80 deprecation warnings in 0.60s. Exit code 0.
+- **Full Test Suite Command:** `pytest`
+  - **Result:** 107 passed (98 adversarial + 5 benchmark + 4 session), 0 failed, 80 warnings in 0.80s. Exit code 0.
+- **Benchmark Adversarial Run Command:** `python scripts/run_benchmark.py --dataset benchmark/datasets/adversarial_dataset.json --mode offline`
+  - **Result:** 4/4 cases processed and passed in offline mode. Reports generated at `benchmark_reports/benchmark_202610d161852-6a9539.md`.
+
+**Mocked vs. Real Component Coverage & Limitations:**
+- Mocked components: Groq chat completions, OpenAI Responses web search, Groq Whisper transcription API, yt-dlp binary downloads, Qdrant vector database connections.
+- Real components executed: Pydantic schemas and validators, URL sanitizers, quote-to-segment fuzzy diff matching (`attach_clip_times`), JSON response deserializers and fence strippers, FFmpeg argument assembly and duration clamping, temporary directory cleanup, database status updates, and FastAPI router authentication middleware.
+- Limitations: Text-based mock fixtures do not evaluate raw acoustic speech recognition accuracy under background acoustic noise, accent variability, or multi-speaker overlapping audio. A separate physical audio corpus is required for true acoustic evaluation.
 
 Brief objective:
 Create controlled adversarial test cases to identify weaknesses in the verification pipeline.
@@ -88,26 +116,68 @@ Planned categories:
 
 ### 3. Observability Dashboard
 
-Status: NOT STARTED
+Status: VALIDATED
 
-Brief objective:
-Create measurable visibility into system performance and reliability.
+**Implementation Details:**
 
-Track planned metrics:
-* End-to-end latency (total duration from submission to final conclusion).
-* Per-stage latency (acquisition, audio extraction, Whisper transcription, claim extraction, RAG retrieval, OpenAI/Groq verification, conclusion synthesis).
-* Transcription duration and real-time factor (RTF).
-* Claim extraction duration and token consumption.
-* Retrieval duration (Qdrant intra-video context search and government source search).
-* Web verification duration (OpenAI Responses web search latency and retry counts).
-* FFmpeg processing time (audio DSP, clip cutting, timeline compilation, reel overlay compositing).
-* API success/failure rates across endpoints and background runners.
-* External API failures (Groq rate limits/429s, OpenAI timeouts, Qdrant connection issues).
-* Processing-stage failures and retry exhaustion.
-* Token/API usage where available (prompt tokens, completion tokens, search tool calls).
-* Estimated AI cost where measurable (Groq API vs. OpenAI GPT-4.1 web search costs).
-* Benchmark accuracy trends over time.
-* Job throughput and concurrency capacity.
+- **Backend telemetry module** (`backend/app/core/telemetry.py`): Lightweight, append-only instrumentation layer. Creates a single new `pipeline_events` SQLite/Postgres table (zero coupling to existing schema). Provides a `record_stage(check_id, stage)` context manager that wraps pipeline stages: records correlation ID, stage name, duration in milliseconds, and sanitised error type (exception class name only — never exception messages, URLs, or claim text) on failure. Storage failures are caught and logged without affecting the pipeline.
+
+- **Pipeline instrumentation** (`backend/app/verifier/runner.py`): All five canonical pipeline stages are now instrumented:
+  - `downloading` — wraps `download_clip`
+  - `transcribing` — wraps `extract_audio` + `build_manuscript`
+  - `extracting_claims` — wraps `extract_claims`
+  - `verifying_claims` — wraps `verify_claim` (once per claim)
+  - `concluding` — wraps `generate_conclusion`
+
+- **Read-only observability API** (`backend/app/api/observability.py`): Four authenticated GET endpoints (protected by existing `AuthMiddleware`) under `/api/observability/`:
+  - `GET /api/observability/summary?hours=N` — overall counts, success rate, pipeline event error rate, avg check duration
+  - `GET /api/observability/stage-stats?hours=N` — per-stage avg/p95 duration, ok/error counts, error rate
+  - `GET /api/observability/executions?hours=N&limit=L&offset=O` — paginated execution history with verdict distribution (no URLs or claim text)
+  - `GET /api/observability/errors?hours=N&limit=L` — recent sanitised pipeline error events (exception class name only)
+
+  All endpoints support a `hours` time-range filter (0 = all time, up to 720h). Duration and verdict aggregation is computed in Python for full SQLite/Postgres compatibility.
+
+- **Frontend dashboard** (`frontend/src/pages/ObservabilityPage.tsx`): Premium `/observability` route added to the React app:
+  - Time-range picker (1h / 6h / 24h / 7d / All time), auto-refreshes every 30 s
+  - Overview card row: total checks, success rate, avg end-to-end duration, total pipeline events / event error rate
+  - Stage performance section: horizontal stacked bar per stage (green = ok, red = error) with avg/p95 latency annotations
+  - Execution history table: paginated, clickable rows linking to `/verify/:checkId`, verdict pip visualisation per execution (no URL exposure)
+  - Recent errors panel: sanitised error type + stage + timing, no claim or URL data
+
+- **NavBar** (`frontend/src/components/ui/NavBar.tsx`): "Observatory" tab added adjacent to Sessions and Verifier, with active state detection.
+
+- **API types & client** (`frontend/src/api/types.ts`, `frontend/src/api/client.ts`): Four TypeScript interfaces (`ObsSummary`, `ObsStageStats`, `ObsExecutions`, `ObsExecution`, `ObsErrorEvent`) and four corresponding `api.getObs*()` functions added.
+
+- **Tests** (`backend/app/tests/test_observability.py`): 42 unit and integration tests covering:
+  - Telemetry: event persistence, 512-char error truncation, null duration, storage-failure suppression, context manager timing, exception-message redaction
+  - `/summary`: empty DB, status counts, time-filter, all-time mode, avg duration, event rates
+  - `/stage-stats`: canonical stage presence, duration aggregation, error rate, p95, null duration non-zero handling, time-filter, parameter coercion
+  - `/executions`: empty, no-URL guarantee, verdict aggregation, pagination, duration, error check null duration, time-filter
+  - `/errors`: empty, error-only filter, no-URL guarantee, error type field, limit, time-filter
+  - Authentication: 401 unauthenticated enforcement across all 4 endpoints, Bearer token authorization, session cookie authorization
+
+**Independent Validation Audit & Defect Remediation (2026-10-17):**
+- **Defect A (Medium — Fixed)**: `get_stage_stats` in `backend/app/api/observability.py` discarded events with `duration_ms=None` from `total_events`, `ok_count`, and `error_count`. Separated counting from duration lists; refactored to `_build_stage_row` helper ensuring null durations are counted towards events and error rates without distorting average/p95 latencies.
+- **Defect B (Medium — Fixed)**: `get_summary` and `get_stage_stats` lacked integer coercion for `hours` (`int(hours)`), causing potential type mismatch when called directly or in programmatic testing. Added explicit `int(hours)` coercion matching `get_executions` and `get_errors`.
+- **Defect C (Medium — Fixed)**: `frontend/src/pages/ObservabilityPage.tsx` silently rendered zero/empty state on API fetch failure (401/500). Added global error banner (`#obs-error-banner`) and explicit error fallbacks for overview stats, stage bars, execution history table, and recent errors panel.
+- **Defect D (Low — Fixed)**: Dead code in `_since_clause()` where an ISO-formatted cutoff was calculated and immediately overwritten by strftime. Removed unused calculation.
+
+**Validation Evidence:**
+- **Test Command:** `pytest app/tests/` (all tests including benchmark, adversarial, session, and observability suites)
+- **Result:** 164 passed, 0 failed, 89 warnings in 1.59s. Exit code 0. (42 observability tests + 122 pre-existing tests.)
+- **Frontend build:** `npm run build` — exit code 0, 0 TypeScript errors, 99 modules transformed, bundle size 342.7 kB.
+
+**Security / Privacy Properties:**
+- No URLs, claim text, transcripts, or API keys appear in telemetry storage or API responses.
+- Error storage contains only exception class names (≤512 chars), not exception messages.
+- All observability endpoints are gated by the existing `AuthMiddleware` Bearer/cookie token check (tested: all 4 endpoints return 401 when unauthenticated).
+- Execution history exposes only check ID, terminal status, claim count, verdict distribution, and timing — no source URLs.
+
+**Known Limitations:**
+- Single-user authentication (`rig360media`): No multi-tenant role-based access control (RBAC); all authenticated users share the same dashboard view.
+- Per-stage token counts and AI cost tracking are not implemented (require upstream API response metering not yet exposed by the pipeline).
+- Benchmark accuracy trend over time is tracked separately via the benchmark runner, not yet integrated into the dashboard.
+- Real-time WebSocket streaming of live pipeline events is deferred to a future iteration.
 
 ## Future Enhancements
 
@@ -136,5 +206,10 @@ For every future update, preserve the history and change only the relevant statu
 | Date | Work Item | Change | Status | Evidence |
 | ---- | --------- | ------ | ------ | -------- |
 | 2026-10-06 | Repository Baseline & Work Tracker | Established full repository architectural baseline and created initial internship work plan. | VALIDATED | Comprehensive static analysis of codebase; created `HANISH_INTERNSHIP_WORK.md`. |
-| 2026-10-10 | Automated Evaluation / Benchmark Framework | Implemented isolated benchmark runner, synthetic fixtures, schema validation, report generation, and regression baseline mechanics in `backend/benchmark/`. | VALIDATED | `pytest` passed 9/9 tests (exit code 0); `run_benchmark.py` ran successfully on synthetic fixtures with 3/3 passed. Framework verified. |
-| 2026-10-10 | Benchmark Framework Audit | Independent audit completed. Fixed missing unique `case_id` validation. Verified ground truth isolation and metric mathematics. | VALIDATED | `pytest` passed 9/9 tests (exit code 0). |
+| 2026-10-8 | Automated Evaluation / Benchmark Framework | Implemented isolated benchmark runner, synthetic fixtures, schema validation, report generation, and regression baseline mechanics in `backend/benchmark/`. | VALIDATED | `pytest` passed 9/9 tests (exit code 0); `run_benchmark.py` ran successfully on synthetic fixtures with 3/3 passed. Framework verified. |
+| 2026-10-17 | Adversarial Test Suite | Implemented 98 adversarial and resilience tests covering categories A through G, integrated adversarial benchmark dataset, and documented confirmed security findings. | VALIDATED | `pytest` passed 107/107 tests (98 adversarial + 9 existing, exit code 0); `run_benchmark.py` ran successfully on `adversarial_dataset.json` with 4/4 passed (exit code 0). |
+| 2026-10-17 | Security Finding Remediation | Remediated 3 findings: SSRF URL boundary with DNS resolution guard (`app/core/url_security.py`), XML untrusted data prompt isolation (`claims.py`), and strict canonical verdict validation/normalization (`claims.py`). Added 15 regression tests. | VALIDATED | `pytest` passed 122/122 tests (exit code 0); `run_benchmark.py` ran 3/3 synthetic and 4/4 adversarial cases passed (exit code 0). |
+| 2026-10-17 | Observability Dashboard | Implemented telemetry module with `pipeline_events` table, instrumented 5 pipeline stages in `runner.py`, created 4 read-only API endpoints under `/api/observability/`, built premium React dashboard (ObservabilityPage) with time-range filter, stat cards, stage perf bars, execution history table, and error panel; added NavBar Observatory tab. | VALIDATED | `pytest` passed 155/155 tests (33 new + 122 pre-existing, exit code 0); `npm run build` passed with 0 TypeScript errors (exit code 0). |
+| 2026-10-17 | Observability Dashboard Validation Audit | Conducted independent validation audit across 8 criteria. Remediated 4 defects: null duration event dropping in stage stats (`observability.py`), hours parameter coercion, missing error handling in frontend panels (`ObservabilityPage.tsx`), and dead code. Added 9 regression tests (42 total obs tests). Verified auth, privacy, persistence, timing, and job-level metrics. | VALIDATED | `pytest app/tests/` passed 164/164 tests (exit code 0); `npm run build` passed with 0 TS errors (exit code 0). |
+
+

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.core import db
 from app.core.config import settings
+from app.core.telemetry import record_stage
 from app.rag import claim_store, gov_store
 from app.verifier.claims import (
     ClaimVerification,
@@ -80,7 +81,8 @@ async def run_reel_check(check_id: str, url: str) -> None:
         # finishes -- everything else here is transient working data.
         check_dir = settings.data_dir / "reel_checks" / check_id
         _set_status(check_id, "downloading")
-        video_path = await asyncio.to_thread(download_clip, url, check_dir)
+        with record_stage(check_id, "downloading"):
+            video_path = await asyncio.to_thread(download_clip, url, check_dir)
 
         with tempfile.TemporaryDirectory(prefix="reel_check_") as tmp:
             tmp_dir = Path(tmp)
@@ -88,13 +90,17 @@ async def run_reel_check(check_id: str, url: str) -> None:
             _set_status(check_id, "transcribing")
             raw_audio = tmp_dir / "audio_raw.wav"
             processed_audio = tmp_dir / "audio_dsp.wav"
-            await asyncio.to_thread(extract_audio, video_path, raw_audio)
-            manuscript, segments = await asyncio.to_thread(build_manuscript, raw_audio, processed_audio)
+            with record_stage(check_id, "transcribing"):
+                await asyncio.to_thread(extract_audio, video_path, raw_audio)
+                manuscript, segments = await asyncio.to_thread(
+                    build_manuscript, raw_audio, processed_audio
+                )
 
             db.execute("UPDATE reel_checks SET manuscript=? WHERE id=?", (manuscript, check_id))
 
             _set_status(check_id, "extracting_claims")
-            claims = await asyncio.to_thread(extract_claims, manuscript)
+            with record_stage(check_id, "extracting_claims"):
+                claims = await asyncio.to_thread(extract_claims, manuscript)
             claims = attach_clip_times(claims, segments)
 
             verifications: list[ClaimVerification] = []
@@ -105,7 +111,10 @@ async def run_reel_check(check_id: str, url: str) -> None:
                     _prior_context, check_id, i, f"{claim.claim} {claim.quote}",
                 )
                 gov_hits = await asyncio.to_thread(_gov_context, f"{claim.claim} {claim.quote}")
-                verification = await asyncio.to_thread(verify_claim, claim, prior_context, gov_hits)
+                with record_stage(check_id, f"verifying_claims"):
+                    verification = await asyncio.to_thread(
+                        verify_claim, claim, prior_context, gov_hits
+                    )
                 verifications.append(verification)
                 verification_dicts.append(verify_claim_to_dict(verification))
                 await asyncio.to_thread(_index_claim, check_id, i, verification)
@@ -118,7 +127,8 @@ async def run_reel_check(check_id: str, url: str) -> None:
                 )
 
             _set_status(check_id, "concluding")
-            conclusion = await asyncio.to_thread(generate_conclusion, verifications)
+            with record_stage(check_id, "concluding"):
+                conclusion = await asyncio.to_thread(generate_conclusion, verifications)
             db.execute("UPDATE reel_checks SET conclusion=? WHERE id=?", (conclusion, check_id))
 
             db.execute(

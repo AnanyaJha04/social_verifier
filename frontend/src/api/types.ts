@@ -186,3 +186,54 @@ export interface DebunkScript {
   created_at: string
   completed_at: string | null
 }
+
+// ---------------------------------------------------------------------------
+// Observability Dashboard
+// ---------------------------------------------------------------------------
+
+export interface ObsSummary {
+  period_hours: number
+  total_checks: number
+  done: number
+  error: number
+  in_progress: number
+  success_rate_pct: number | null
+  pipeline_error_rate_pct: number | null
+  avg_check_duration_s: number | null
+  total_pipeline_events: number
+}
+
+export interface ObsStageStats {
+  stage: string
+  total_events: number
+  ok_count: number
+  error_count: number
+  avg_duration_ms: number | null
+  p95_duration_ms: number | null
+  error_rate_pct: number | null
+}
+
+export interface ObsExecution {
+  id: string
+  status: string
+  claim_count: number
+  verdict_counts: Record<string, number>
+  created_at: string
+  completed_at: string | null
+  duration_s: number | null
+}
+
+export interface ObsExecutions {
+  total: number
+  offset: number
+  limit: number
+  items: ObsExecution[]
+}
+
+export interface ObsErrorEvent {
+  check_id: string
+  stage: string
+  duration_ms: number | null
+  error_type: string | null
+  recorded_at: string
+}
